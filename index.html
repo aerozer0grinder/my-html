@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aerozer0grinder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CORE STYLES --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505; color: white;
+            overflow: hidden; height: 100vh; width: 100vw;
+            user-select: none; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #bg-video {
+            position: fixed; top: 50%; left: 50%;
+            min-width: 100%; min-height: 100%;
+            z-index: -2; transform: translate(-50%, -50%);
+            object-fit: cover; filter: blur(8px) brightness(0.4);
+            opacity: 0; transition: opacity 1.5s ease;
+        }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: -1; }
+
+        /* --- ENTER SCREEN (RESTORED PULSING) --- */
+        #enter-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: opacity 0.8s ease;
+        }
+        #enter-text {
+            font-size: 1.5rem; font-weight: 700; letter-spacing: 2px;
+            text-shadow: 0 0 15px white;
+            animation: pulse 1.5s infinite alternate;
+        }
+        @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
+
+        /* --- BUTTONS --- */
+        .ctrl-btn {
+            position: fixed; top: 25px; z-index: 100;
+            width: 45px; height: 45px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: 0.3s; color: white;
+        }
+        #effect-toggle { left: 25px; }
+        #game-trigger { right: 25px; }
+
+        /* --- PROFILE CARD --- */
+        #main-content {
+            height: 100%; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 1s ease 0.5s;
+        }
+        .profile-card {
+            background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px; padding: 3rem 2rem;
+            width: 90%; max-width: 440px; text-align: center;
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        .pfp { width: 110px; height: 110px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.1); margin-bottom: 1rem; object-fit: cover; }
+        
+        .widget {
+            background: rgba(0, 0, 0, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 1rem;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; gap: 12px; text-align: left;
+        }
+
+        .social-link { color: rgba(255,255,255,0.6); font-size: 1.5rem; margin: 0 10px; transition: 0.3s; }
+        .social-link:hover { color: #fff; transform: translateY(-3px); }
+
+        /* SHIFTED DOWN IST LABEL */
+        .info-label { 
+            font-family: 'Fira Code', monospace; font-size: 0.75rem; color: #555; 
+            background: rgba(0,0,0,0.3); padding: 6px 15px; border-radius: 50px;
+            margin-top: 35px; display: inline-block;
+        }
+
+        /* --- THEMES --- */
+        body.mode-glitch .profile-card { border: 2px solid #00f2ff; box-shadow: 4px 4px 0px #ff0055; }
+        body.mode-neon .profile-card { border: 1px solid #00ff88; box-shadow: 0 0 15px #00ff8844; }
+        body.mode-terminal .profile-card { background: #000; border: 1px solid #00ff00; border-radius: 0; }
+        body.mode-terminal * { color: #00ff00 !important; border-color: #00ff00 !important; }
+        body.mode-royal .profile-card { background: linear-gradient(145deg, #1a002b, #0f001a); border: 2px solid #ffcc00; }
+
+        #game-modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            z-index: 2000; flex-direction: column; justify-content: center; align-items: center;
+        }
+    </style>
+</head>
+<body class="mode-clean">
+
+    <div id="enter-screen"><div id="enter-text">click to enter...</div></div>
+
+    <video id="bg-video" loop muted playsinline><source src="bg-video.mp4" type="video/mp4"></video>
+    <div id="overlay"></div>
+    <audio id="bg-music" loop><source src="bg-music.mp3" type="audio/mp3"></audio>
+
+    <div class="ctrl-btn" id="effect-toggle"><i class="fa-solid fa-palette"></i></div>
+    <div class="ctrl-btn" id="game-trigger"><i class="fa-solid fa-gamepad"></i></div>
+
+    <div id="main-content">
+        <div class="profile-card">
+            <img id="user-pfp" src="https://cdn.discordapp.com/embed/avatars/0.png" class="pfp">
+            <h1 style="font-weight: 800; font-size: 1.8rem;">AeroZer0Grinder</h1>
+            <div style="color: #888; margin-bottom: 15px;">@aerozer0grinder</div>
+
+            <div class="widget">
+                <div id="status-icon" style="font-size: 1.5rem;"><i class="fa-solid fa-circle"></i></div>
+                <div>
+                    <div style="font-size: 0.65rem; color: #aaa; font-weight: bold;">STATUS</div>
+                    <div id="status-text" style="font-size: 0.85rem; font-weight: 600;">Connecting...</div>
+                </div>
+            </div>
+
+            <div class="widget" style="cursor:pointer;" onclick="toggleMusic()">
+                <i id="play-icon" class="fa-solid fa-pause"></i>
+                <div>
+                    <div style="font-size: 0.85rem; font-weight: 700;">Clima Lindo - Slowed</div>
+                    <div style="font-size: 0.65rem; color: #888;">Background Audio</div>
+                </div>
+            </div>
+
+            <div class="socials">
+                <a href="https://github.com/aerozer0grinder" target="_blank" class="social-link"><i class="fa-brands fa-github"></i></a>
+                <a href="https://instagram.com/aerozer0grinder" target="_blank" class="social-link"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://discord.com/users/1256196862130651220" target="_blank" class="social-link"><i class="fa-brands fa-discord"></i></a>
+            </div>
+
+            <div class="info-label" id="bottom-label">IST: --:--:--</div>
+        </div>
+    </div>
+
+    <div id="game-modal">
+        <canvas id="game-canvas" width="320" height="480"></canvas>
+        <div onclick="closeGame()" style="margin-top:20px; color:#666; cursor:pointer;">[ Close Game ]</div>
+    </div>
+
+    <script>
+        const USER_ID = "1256196862130651220";
+        const BOTTOM_TEXT = "Time:"; 
+
+        const music = document.getElementById('bg-music');
+        document.getElementById('enter-screen').addEventListener('click', function() {
+            this.style.opacity = '0';
+            setTimeout(() => {
+                this.style.display = 'none';
+                document.getElementById('main-content').style.opacity = '1';
+                document.getElementById('bg-video').style.opacity = '1';
+                document.getElementById('bg-video').play(); music.play();
+            }, 800);
+        });
+
+        function toggleMusic() {
+            const icon = document.getElementById('play-icon');
+            if (music.paused) { music.play(); icon.classList.replace('fa-play', 'fa-pause'); }
+            else { music.pause(); icon.classList.replace('fa-pause', 'fa-play'); }
+        }
+
+        function updateClock() {
+            const now = new Date().toLocaleTimeString("en-US", {timeZone: "Asia/Kolkata", hour12: true});
+            document.getElementById('bottom-label').innerText = `${BOTTOM_TEXT} ${now}`;
+        }
+        setInterval(updateClock, 1000);
+
+        async function fetchDiscord() {
+            try {
+                const r = await fetch(`https://api.lanyard.rest/v1/users/${USER_ID}`);
+                const { data } = await r.json();
+                if(data) {
+                    document.getElementById('user-pfp').src = `https://cdn.discordapp.com/avatars/${data.discord_user.id}/${data.discord_user.avatar}.png?size=1024`;
+                    
+                    const game = data.activities.find(a => a.type === 0);
+                    const custom = data.activities.find(a => a.type === 4);
+                    
+                    let finalStatus = data.discord_status.toUpperCase();
+                    if(game) finalStatus = `Playing ${game.name}`;
+                    else if(custom && custom.state) finalStatus = custom.state; // Shows your Custom Status text
+                    
+                    document.getElementById('status-text').innerText = finalStatus;
+                    const colors = { online: '#43b581', idle: '#faa61a', dnd: '#f04747', offline: '#747f8d' };
+                    document.getElementById('status-icon').style.color = colors[data.discord_status];
+                }
+            } catch(e) { }
+        }
+        fetchDiscord(); setInterval(fetchDiscord, 15000);
+
+        const modes = ['mode-clean', 'mode-glitch', 'mode-neon', 'mode-terminal', 'mode-royal'];
+        let mIdx = 0;
+        document.getElementById('effect-toggle').addEventListener('click', () => {
+            document.body.classList.remove(modes[mIdx]);
+            mIdx = (mIdx + 1) % modes.length;
+            document.body.classList.add(modes[mIdx]);
+        });
+
+        const gameModal = document.getElementById('game-modal');
+        const cvs = document.getElementById('game-canvas');
+        const ctx = cvs.getContext('2d');
+        let frames = 0, isRunning = false, pipes = [], score = 0;
+        let bird = { x: 50, y: 150, w: 20, h: 20, speed: 0, gravity: 0.25, jump: -4.6 };
+
+        document.getElementById('game-trigger').addEventListener('click', () => { gameModal.style.display = 'flex'; resetGame(); isRunning = true; loop(); });
+        function closeGame() { gameModal.style.display = 'none'; isRunning = false; }
+        cvs.addEventListener('click', () => { if(isRunning) bird.speed = bird.jump; });
+
+        function resetGame() { bird.y = 150; bird.speed = 0; pipes = []; score = 0; frames = 0; }
+        function loop() {
+            if(!isRunning) return;
+            ctx.fillStyle = "#70c5ce"; ctx.fillRect(0,0,320,480);
+            bird.speed += bird.gravity; bird.y += bird.speed;
+            if(bird.y > 480 || bird.y < 0) resetGame();
+            ctx.fillStyle = "yellow"; ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
+            if(frames % 100 === 0) pipes.push({x: 320, y: Math.random() * 200 + 50});
+            pipes.forEach((p, i) => {
+                p.x -= 2; ctx.fillStyle = "green";
+                ctx.fillRect(p.x, 0, 40, p.y); ctx.fillRect(p.x, p.y+110, 40, 480);
+                if(bird.x+20 > p.x && bird.x < p.x+40 && (bird.y < p.y || bird.y+20 > p.y+110)) resetGame();
+                if(p.x < -40) { pipes.splice(i, 1); score++; }
+            });
+            // RESTORED SCORE COUNTER
+            ctx.fillStyle = "white"; ctx.font = "bold 20px Inter"; ctx.fillText(`Score: ${score}`, 15, 30);
+            frames++; requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+</html>
